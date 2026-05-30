@@ -1,99 +1,125 @@
-let flashcards = [];
-let currentIndex = 0;
+// Data
+let cards = [];
+let index = 0;
 
-// Load from localStorage
-function loadFlashcards() {
-    const stored = localStorage.getItem("flashcards");
-    if (stored) {
-        flashcards = JSON.parse(stored);
-    } else {
-        // Default data
-        flashcards = [
-            { question: "What is 2+2?", answer: "4" },
-            { question: "Capital of France?", answer: "Paris" }
-        ];
-    }
-    updateCounter();
-    displayCard();
+// Load saved data
+let data = localStorage.getItem("flashcards");
+if (data) {
+    cards = JSON.parse(data);
+} else {
+    cards = [
+        {q: "Capital of France?", a: "Paris"},
+        {q: "2 + 2 = ?", a: "4"},
+        {q: "What color is the sky?", a: "Blue"}
+    ];
 }
 
-function saveFlashcards() {
-    localStorage.setItem("flashcards", JSON.stringify(flashcards));
-}
-
-function displayCard() {
-    if (flashcards.length === 0) {
-        document.getElementById("question-text").innerText = "No flashcards";
-        document.getElementById("answer-text").innerText = "Add one!";
+// Display current card
+function show() {
+    if (cards.length === 0) {
+        document.getElementById("question").innerHTML = "✨ No flashcards yet!";
+        document.getElementById("answer").innerHTML = "Add one below ✨";
+        document.getElementById("counter").innerHTML = "0 cards";
         return;
     }
-    document.getElementById("question-text").innerText = flashcards[currentIndex].question;
-    document.getElementById("answer-text").innerText = flashcards[currentIndex].answer;
-    // Reset flip
-    document.querySelector(".flashcard-inner").classList.remove("flipped");
+    document.getElementById("question").innerHTML = cards[index].q;
+    document.getElementById("answer").innerHTML = cards[index].a;
+    document.getElementById("answer").style.display = "none";
+    document.getElementById("counter").innerHTML = "📇 Card " + (index + 1) + " of " + cards.length;
 }
 
-function updateCounter() {
-    document.getElementById("card-counter").innerText = `Card ${currentIndex+1} of ${flashcards.length}`;
+// Save to localStorage
+function save() {
+    localStorage.setItem("flashcards", JSON.stringify(cards));
 }
 
-function showAnswer() {
-    document.querySelector(".flashcard-inner").classList.add("flipped");
-}
+// Next button
+document.getElementById("next").onclick = function() {
+    if (cards.length === 0) return;
+    index = index + 1;
+    if (index >= cards.length) index = 0;
+    show();
+};
 
-function nextCard() {
-    if (flashcards.length === 0) return;
-    currentIndex = (currentIndex + 1) % flashcards.length;
-    displayCard();
-    updateCounter();
-}
+// Previous button
+document.getElementById("prev").onclick = function() {
+    if (cards.length === 0) return;
+    index = index - 1;
+    if (index < 0) index = cards.length - 1;
+    show();
+};
 
-function prevCard() {
-    if (flashcards.length === 0) return;
-    currentIndex = (currentIndex - 1 + flashcards.length) % flashcards.length;
-    displayCard();
-    updateCounter();
-}
+// Show answer
+document.getElementById("showAnswer").onclick = function() {
+    if (cards.length > 0) {
+        document.getElementById("answer").style.display = "block";
+    }
+};
 
-function saveCurrentCard() {
-    const newQuestion = document.getElementById("edit-question").value.trim();
-    const newAnswer = document.getElementById("edit-answer").value.trim();
-    if (!newQuestion || !newAnswer) {
-        alert("Please enter both question and answer");
+// ADD NEW CARD
+document.getElementById("addNew").onclick = function() {
+    let q = document.getElementById("newQ").value;
+    let a = document.getElementById("newA").value;
+    
+    if (q === "" || a === "") {
+        alert("Please type both question and answer");
         return;
     }
-    if (flashcards.length === 0) {
-        flashcards.push({ question: newQuestion, answer: newAnswer });
-        currentIndex = 0;
-    } else {
-        flashcards[currentIndex] = { question: newQuestion, answer: newAnswer };
+    
+    cards.push({q: q, a: a});
+    index = cards.length - 1;
+    save();
+    show();
+    
+    document.getElementById("newQ").value = "";
+    document.getElementById("newA").value = "";
+    
+    alert("✅ New card added!");
+};
+
+// UPDATE current card
+document.getElementById("updateCurrent").onclick = function() {
+    let q = document.getElementById("newQ").value;
+    let a = document.getElementById("newA").value;
+    
+    if (q === "" || a === "") {
+        alert("Please type both question and answer");
+        return;
     }
-    saveFlashcards();
-    displayCard();
-    updateCounter();
-    document.getElementById("edit-question").value = "";
-    document.getElementById("edit-answer").value = "";
-}
+    
+    cards[index] = {q: q, a: a};
+    save();
+    show();
+    
+    document.getElementById("newQ").value = "";
+    document.getElementById("newA").value = "";
+    
+    alert("✅ Current card updated!");
+};
 
-function deleteCurrentCard() {
-    if (flashcards.length === 0) return;
-    flashcards.splice(currentIndex, 1);
-    if (flashcards.length === 0) {
-        currentIndex = 0;
-    } else {
-        currentIndex = Math.min(currentIndex, flashcards.length - 1);
+// Delete current card
+document.getElementById("delete").onclick = function() {
+    if (cards.length === 0) {
+        alert("No cards to delete");
+        return;
     }
-    saveFlashcards();
-    displayCard();
-    updateCounter();
-}
+    
+    if (confirm("Delete this card?")) {
+        cards.splice(index, 1);
+        
+        if (cards.length === 0) {
+            index = 0;
+        } else {
+            if (index >= cards.length) {
+                index = cards.length - 1;
+            }
+        }
+        
+        save();
+        show();
+        alert("🗑️ Card deleted");
+    }
+};
 
-// Event listeners
-document.getElementById("show-answer-btn").addEventListener("click", showAnswer);
-document.getElementById("next-btn").addEventListener("click", nextCard);
-document.getElementById("prev-btn").addEventListener("click", prevCard);
-document.getElementById("save-btn").addEventListener("click", saveCurrentCard);
-document.getElementById("delete-btn").addEventListener("click", deleteCurrentCard);
-
-// Initialize
-loadFlashcards();
+// Start the app
+show();
